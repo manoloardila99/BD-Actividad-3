@@ -1,0 +1,61 @@
+// Configuración Inicial
+// Iniciar los Config Servers
+
+mongod --configsvr --replSet configReplSet --bind_ip localhost --port 27019 --dbpath /data/configdb
+
+// Iniciar los Shard Servers
+
+mongod --shardsvr --replSet shardReplSet --bind_ip localhost --port 27018 --dbpath /data/sharddb
+
+// Iniciar el Router (Mongos)
+
+mongos --configdb configReplSet/localhost:27019,localhost:27020,localhost:27021 --bind_ip localhost --port 27017
+
+
+// Configurar el Clúster de Sharding
+
+mongo --host localhost --port 27017
+
+// Configurar el Replica Set de los Config Servers
+
+rs.initiate({
+  _id: "configReplSet",
+  configsvr: true,
+  members: [
+    { _id: 0, host: "localhost:27019" },
+    { _id: 1, host: "localhost:27020" },
+    { _id: 2, host: "localhost:27021" }
+  ]
+});
+
+// Añadir los Shards al Clúster
+
+sh.addShard("shardReplSet/localhost:27018");
+sh.addShard("shardReplSet/localhost:27019");
+sh.addShard("shardReplSet/localhost:27020");
+
+// Habilitar el Sharding para la Base de Datos
+
+sh.enableSharding("champions_league");
+
+// Configurar las Claves de Fragmentación
+
+sh.shardCollection("champions_league.deportistas", { "equipo_id": 1 });
+
+// Colección "Partidos"
+
+sh.shardCollection("champions_league.partidos", { "fecha_del_partido": 1 });
+
+// Colección "Resultados"
+
+sh.shardCollection("champions_league.resultados", { "partido_id": 1 });
+
+// Verificación del Particionamiento
+
+sh.status();
+
+// Distribución de Fragmentos
+
+db.deportistas.getShardDistribution();
+db.partidos.getShardDistribution();
+db.resultados.getShardDistribution();
