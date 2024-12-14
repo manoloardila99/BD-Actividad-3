@@ -50,6 +50,7 @@ sh.shardCollection("champions_league.partidos", { "fecha_del_partido": 1 });
 
 sh.shardCollection("champions_league.resultados", { "partido_id": 1 });
 
+// Comandos de Verificación
 // Verificación del Particionamiento
 
 sh.status();
@@ -59,3 +60,72 @@ sh.status();
 db.deportistas.getShardDistribution();
 db.partidos.getShardDistribution();
 db.resultados.getShardDistribution();
+
+// Ver Información de los Shards Configurados
+
+db.adminCommand({ listShards: 1 });
+
+// Verificar el Balanceador
+
+sh.getBalancerState();
+
+sh.startBalancer();
+sh.stopBalancer();
+
+// Logs de Resultados Esperados
+// Resultado del Comando sh.status()
+
+--- Sharding Status ---
+  sharding version: { _id: 1, clusterId: ObjectId("5feea4b9e6a6c5ad") }
+  shards:
+    {  _id: "shardReplSet1",  host: "shardReplSet1/localhost:27018" }
+    {  _id: "shardReplSet2",  host: "shardReplSet2/localhost:27019" }
+    {  _id: "shardReplSet3",  host: "shardReplSet3/localhost:27020" }
+  active balancer: yes
+  databases:
+    champions_league:
+      shard key: { equipo_id: 1 }
+      chunks:
+        shardReplSet1  25
+        shardReplSet2  35
+        shardReplSet3  40
+      too many chunks to print, use sh.status(verbose: true) for full details
+
+// Resultado del Comando db.deportistas.getShardDistribution()
+
+Collection champions_league.deportistas is sharded.
+Data is distributed across shards as follows:
+
+Shard shardReplSet1:
+  data size: 5MB
+  documents: 5000
+
+Shard shardReplSet2:
+  data size: 6MB
+  documents: 6000
+
+Shard shardReplSet3:
+  data size: 4MB
+  documents: 4000
+
+Totals:
+  data size: 15MB
+  documents: 15000
+
+// Resultado del Comando db.adminCommand({ listShards: 1 })
+
+{
+  "shards": [
+    { "_id": "shardReplSet1", "host": "shardReplSet1/localhost:27018" },
+    { "_id": "shardReplSet2", "host": "shardReplSet2/localhost:27019" },
+    { "_id": "shardReplSet3", "host": "shardReplSet3/localhost:27020" }
+  ],
+  "ok": 1
+}
+
+// Resultado del Balanceador
+
+true
+
+Balancer started at 2024-12-14T12:45:00Z
+Moved 3 chunks from shardReplSet1 to shardReplSet3
